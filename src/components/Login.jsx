@@ -44,7 +44,6 @@ const Login = () => {
               onError={() => {
                 console.log("Login Failed");
               }}
-              cookiePolicy="single_host_origin"
             />
           </div>
         </div>

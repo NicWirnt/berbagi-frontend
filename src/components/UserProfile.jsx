@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { AiOutlineLogout } from "react-icons/ai";
 import { useParams, useNavigate } from "react-router-dom";
-import { googleLogout } from "@react-oauth/google";
+import { GoogleLogin, googleLogout } from "@react-oauth/google";
 
 import {
   userCreatedPinsQuery,
@@ -13,6 +13,7 @@ import { client } from "../client";
 import MasonryLayout from "./MasonryLayout";
 
 import Spinner from "./Spinner";
+import { createOrGetUser } from "../helper/fetchGoogleUser";
 
 const randomImage =
   "https://source.unsplash.com/1600x900/?nature,photography,technology,cars";
@@ -39,6 +40,15 @@ const UserProfile = () => {
     return <Spinner message="Loading profile..." />;
   }
 
+  const responseGoogle = async (response) => {
+    const result = await createOrGetUser(response);
+    localStorage.setItem("user", JSON.stringify(result));
+
+    client.createIfNotExists(result).then(() => {
+      navigate("/", { replace: true });
+    });
+  };
+
   return (
     <div className="relative pb-2 h-full justify-center items-center">
       <div className="flex flex-col pb-5">
@@ -58,7 +68,28 @@ const UserProfile = () => {
               {user.username}
             </h1>
             <div className="absolute top-0 z-1 right-0 p-2">
-              {userId === user._id && <googleLogout></googleLogout>}
+              {userId === user._id ? (
+                <button
+                  type="button"
+                  className="px-2 bg-red-500 rounded-lg opacity-50 hover:opacity-70 shadow-xl"
+                  onClick={() => {
+                    googleLogout();
+                    localStorage.clear();
+                    navigate("/login");
+                  }}
+                >
+                  Logout
+                </button>
+              ) : (
+                <GoogleLogin
+                  onSuccess={(credentialResponse) => {
+                    responseGoogle(credentialResponse);
+                  }}
+                  onError={() => {
+                    console.log("Login Failed");
+                  }}
+                />
+              )}
             </div>
           </div>
         </div>
