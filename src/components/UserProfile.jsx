@@ -18,10 +18,15 @@ import { createOrGetUser } from "../helper/fetchGoogleUser";
 const randomImage =
   "https://source.unsplash.com/1600x900/?nature,photography,technology,cars";
 
+const activeBtnStyles =
+  "bg-red-500 text-white font-bold p-2 rounded-full w-20 outline-none";
+const notActiveBtnStyles =
+  "bg-white-500 mr-4 text-black font-bold p-2 rounded-full w-20 outlinenone";
+
 const UserProfile = () => {
   const [user, setUser] = useState(null);
   const [pins, setPins] = useState(null);
-  const [text, setText] = useState("Created");
+  const [text, setText] = useState("created");
   const [activeBtn, setActiveBtn] = useState("created");
 
   const navigate = useNavigate();
@@ -35,6 +40,22 @@ const UserProfile = () => {
       setUser(data[0]);
     });
   }, [userId]);
+
+  useEffect(() => {
+    if (text === "created") {
+      const createdPinsQuery = userCreatedPinsQuery(userId);
+
+      client.fetch(createdPinsQuery).then((data) => {
+        setPins(data);
+      });
+    } else {
+      const savedPinsQuery = userSavedPinsQuery(userId);
+
+      client.fetch(savedPinsQuery).then((data) => {
+        setPins(data);
+      });
+    }
+  }, [text, userId]);
 
   if (!user) {
     return <Spinner message="Loading profile..." />;
@@ -71,14 +92,14 @@ const UserProfile = () => {
               {userId === user._id ? (
                 <button
                   type="button"
-                  className="px-2 bg-red-500 rounded-lg opacity-50 hover:opacity-70 shadow-xl"
+                  className="p-2 bg-white rounded-full opacity-50 hover:opacity-70 shadow-xl"
                   onClick={() => {
                     googleLogout();
                     localStorage.clear();
                     navigate("/login");
                   }}
                 >
-                  Logout
+                  <AiOutlineLogout color="red" fontSize={30} />
                 </button>
               ) : (
                 <GoogleLogin
@@ -92,7 +113,42 @@ const UserProfile = () => {
               )}
             </div>
           </div>
+          <div className="text-center mb-7">
+            <button
+              type="button"
+              onClick={(e) => {
+                setText(e.target.textContent);
+                setActiveBtn("created");
+              }}
+              className={`${
+                activeBtn === "created" ? activeBtnStyles : notActiveBtnStyles
+              }`}
+            >
+              created
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                setText(e.target.textContent);
+                setActiveBtn("saved");
+              }}
+              className={`${
+                activeBtn === "saved" ? activeBtnStyles : notActiveBtnStyles
+              }`}
+            >
+              saved
+            </button>
+          </div>
         </div>
+        {pins?.length ? (
+          <div className="px-2">
+            <MasonryLayout pins={pins} />
+          </div>
+        ) : (
+          <div className="flex justify-center items-center w-full text-xl mt-2">
+            No Pins Found
+          </div>
+        )}
       </div>
     </div>
   );
